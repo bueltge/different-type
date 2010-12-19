@@ -2,27 +2,28 @@
 /**
  * @package Different Type
  * @author Frank B&uuml;ltge
- * @version 0.1
+ * @version 0.2
  */
  
 /*
 	Plugin Name: Different Type
 	Plugin URI: http://bueltge.de/
-	Description: Add different types to posts
+	Description: Add different types to posts from WordPress as an example
 	Author: Frank B&uuml;ltge
-	Version: 0.1
+	Version: 0.2
 	License: GPL
 	Author URI: http://bueltge.de/
-	Last change: 24.12.2009 00:00:00
+	Last change: 24.12.2010 00:00:00
 */
 
 /**
  * Example for use outside the loop:
- * <?php the_DifferentTypeFacts($post->ID); ?>
+ * <?php the_different_type_facts($post->ID); ?>
  * @param $id Integer - Post-ID
  * @param $type String - heading, additional-info, listdata (default is ''-empty)
  *
- * Example: <?php the_DifferentTypeFacts($post->ID, 'heading'); ?>
+ * Example: <?php the_different_type_facts($post->ID, 'heading'); ?>
+ * Example2: <?php the_different_type_facts( get_the_ID(), 'additional-info' ); ?>
  */
 
 //avoid direct calls to this file, because now WP core and framework has been used
@@ -46,46 +47,46 @@ if ( function_exists('add_action') ) {
 		define( 'PLUGINDIR', 'wp-content/plugins' ); // Relative to ABSPATH.  For back compat.
 	if ( !defined('WP_LANG_DIR') )
 		define('WP_LANG_DIR', WP_CONTENT_DIR . '/languages');
+}
+
+
+// uninstall all postmetadata
+function different_type_uninstall() {
+	
+	$all_posts = get_posts('numberposts=0&post_type=post&post_status=');
+	
+	foreach( $all_posts as $postinfo) {
+		delete_post_meta($postinfo->ID, '_different-types');
+	}
+}
+register_uninstall_hook( __FILE__, 'different_type_uninstall' );
+
+if ( !class_exists( 'Different_Type' ) ) {
 	
 	// plugin definitions
 	define( 'FB_DT_BASENAME', plugin_basename(__FILE__) );
 	define( 'FB_DT_BASEDIR', dirname( plugin_basename(__FILE__) ) );
 	define( 'FB_DT_TEXTDOMAIN', 'different-types' );
-}
-
-if ( !class_exists( 'DifferentType' ) ) {
-	class DifferentType {
+	
+	class Different_Type {
 		
-		// constructor
-		function DifferentType() {
+		// constructor php4-style
+		function different_type() {
 			
-			if (is_admin() ) {
-				add_action( 'admin_init', array(&$this, 'on_admin_init') );
-				add_action( 'wp_insert_post', array(&$this, 'on_wp_insert_post'), 10, 2 );
-				add_action( 'init', array(&$this, 'textdomain') );
-				register_uninstall_hook( __FILE__, array(&$this, 'uninstall') );
-				add_action( "admin_print_scripts-post.php", array($this, 'enqueue_script') );
-				add_action( "admin_print_scripts-post-new.php", array($this, 'enqueue_script') );
-				add_action( "admin_print_scripts-page.php", array($this, 'enqueue_script') );
-				add_action( "admin_print_scripts-page-new.php", array($this, 'enqueue_script') );
-			}
+			add_action( 'init', array(&$this, 'textdomain') );
+				
+			add_action( 'admin_init', array(&$this, 'on_admin_init') );
+			add_action( 'wp_insert_post', array(&$this, 'on_wp_insert_post'), 10, 2 );
+			
+			add_action( "admin_print_scripts-post.php", array($this, 'enqueue_script') );
+			add_action( "admin_print_scripts-post-new.php", array($this, 'enqueue_script') );
+			add_action( "admin_print_scripts-page.php", array($this, 'enqueue_script') );
+			add_action( "admin_print_scripts-page-new.php", array($this, 'enqueue_script') );
 		}
 		
 		// active for multilanguage
 		function textdomain() {
-			
-			if ( function_exists('load_plugin_textdomain') )
-				load_plugin_textdomain( FB_DT_TEXTDOMAIN, false, dirname( FB_DT_BASENAME ) . '/languages' );
-		}
-		
-		// unsintall all postmetadata
-		function uninstall() {
-			
-			$all_posts = get_posts('numberposts=0&post_type=post&post_status=');
-			
-			foreach( $all_posts as $postinfo) {
-				delete_post_meta($postinfo->ID, '_different-types');
-			}
+			load_plugin_textdomain( FB_DT_TEXTDOMAIN, false, dirname( FB_DT_BASENAME ) . '/languages' );
 		}
 		
 		// add script
@@ -96,15 +97,17 @@ if ( !class_exists( 'DifferentType' ) ) {
 		// admin init
 		function on_admin_init() {
 			
+			// check for rights
 			if ( !current_user_can( 'publish_posts' ) )
 				return;
 			
-			add_meta_box( 'hotel_helper',
-									__( 'Different Types', FB_DT_TEXTDOMAIN ),
-									array( &$this, 'meta_box' ),
-									'post', 'normal', 'high'
-									);
-									
+			add_meta_box( 
+				'different_type',
+				__( 'Different Types', FB_DT_TEXTDOMAIN ),
+				array( &$this, 'meta_box' ),
+				'post', 'normal', 'high'
+			);
+			
 			// remove meta box for trackbacks
 			remove_meta_box('trackbacksdiv', 'post', 'normal');
 			// remove meta box for custom fields
@@ -114,7 +117,8 @@ if ( !class_exists( 'DifferentType' ) ) {
 		// check for preview
 		function is_page_preview() {
 			$id = (int)$_GET['preview_id'];
-			if ($id == 0) $id = (int)$_GET['post_id'];
+			if ($id == 0)
+				$id = (int)$_GET['post_id'];
 			$preview = $_GET['preview'];
 			if ($id > 0 && $preview == 'true') {
 				global $wpdb;
@@ -151,6 +155,7 @@ if ( !class_exists( 'DifferentType' ) ) {
 		// load post_meta_data
 		function load_post_meta($id) {
 			
+			// _ (underline) is important for hide in custom fields
 			return get_post_meta($id, '_different-types', true);
 		}
 
@@ -184,9 +189,9 @@ if ( !class_exists( 'DifferentType' ) ) {
 			</table>
 			<?php
 		}
-
+		
 		// return facts incl. markup
-		function get_DifferentTypeFacts($id, $type, $value) {
+		function get_different_typeFacts($id, $type, $value) {
 			
 			if (!$value)
 				return false;
@@ -208,26 +213,27 @@ if ( !class_exists( 'DifferentType' ) ) {
 		}
 		
 		// echo facts, if exists
-		function DifferentTypeFacts($id, $type, $string) {
+		function different_type_facts($id, $type, $string) {
 		
 			if ( $id ) {
 				$value = $this->load_post_meta($id);
 				
-				echo $this->get_DifferentTypeFacts($id, $type, $value);
+				echo $this->get_different_typeFacts($id, $type, $value);
 			}
 		}
 
 	} // End class
 	
-	// instance class
-	$DifferentType = new DifferentType();
+	function different_type_start() {
 	
+		new Different_Type();
+	}
+	add_action( 'plugins_loaded', 'different_type_start' );
 	
 	// use in template
-	function the_DifferentTypeFacts($id, $type = '', $string = '') {
-		global $DifferentType;
-		
-		$DifferentType->DifferentTypeFacts($id, $type, $string);
+	function the_different_type_facts($id, $type = '', $string = '') {
+		$different_type = new Different_Type();
+		$different_type->different_type_facts($id, $type, $string);
 	}
 	
 } // End if class exists statement

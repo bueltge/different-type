@@ -3,8 +3,8 @@ Contributors: Bueltge
 Donate link: http://bueltge.de/wunschliste/
 Tags: post, meta box
 Requires at least: 2.8
-Tested up to: 2.9
-Stable tag: 0.1
+Tested up to: 3.1
+Stable tag: 0.2
 
 Add different types to posts.
 
@@ -20,12 +20,12 @@ Add new areas on the post-edit-area: subtitle, additional informations and a fie
 Example:
 `<div <?php post_class() ?> id="post-<?php the_ID(); ?>">
 	<h2><?php the_title(); ?></h2>
-	<h3><?php if ( function_exists('the_DifferentTypeFacts') ) the_DifferentTypeFacts($post->ID, 'heading'); ?></h3>
+	<h3><?php if ( function_exists('the_different_type_facts') ) the_different_type_facts(get_the_ID(), 'heading'); ?></h3>
 	<div class="entry">
 		<?php the_content('<p class="serif">Read the rest of this entry &raquo;</p>'); ?>
 		
-		<?php if ( function_exists('the_DifferentTypeFacts') ) the_DifferentTypeFacts($post->ID, 'additional-info'); ?>
-		<?php if ( function_exists('the_DifferentTypeFacts') ) the_DifferentTypeFacts($post->ID, 'listdata'); ?>
+		<?php if ( function_exists('the_different_type_facts') ) the_different_type_facts($post->ID, 'additional-info'); ?>
+		<?php if ( function_exists('the_different_type_facts') ) the_different_type_facts($post->ID, 'listdata'); ?>
 `
 
 
@@ -34,5 +34,11 @@ Example:
 1. Example Fronetend on Kubrick-Theme
 
 == Changelog ==
+= v0.2 (12/19/2010) =
+* Maintenance: changes for WP Codes (camelcase, small caps)
+* Maintenance: change include in WP, better via Hook 'plugins_loaded`
+* Maintenance: uninstall function outside the class, ready for WP 3.1
+* some more, and slightly
+
 = v0.1 (12/24/2009) =
 * 24. day of my advent calender is this plugin for learn custom your edit area
